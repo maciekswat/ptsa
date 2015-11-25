@@ -1026,8 +1026,12 @@ class DimArray(AttrArray):
         # make sure we have a list
         if isinstance(data,DimArray):
             data = [data]
+        elif isinstance(data,list):
+            data = data
         else:
-            data = list(data)
+            data = list(data) # original
+            # data = data
+
 
         # make sure we have an axis number:
         axis = self.get_axis(axis)
@@ -1038,9 +1042,10 @@ class DimArray(AttrArray):
             raise ValueError('Names of the dimensions do not match!')
                 
         # make sure all dims except for the extended one match:
-        dim_deviations = [np.sum(d.dims!=self.dims) for d in data]
-        if np.sum(dim_deviations)>1:
-            raise ValueError('Dimensions do not match!')
+        # ORIGINAL
+        # dim_deviations = [np.sum(d.dims!=self.dims) for d in data]
+        # if np.sum(dim_deviations)>1:
+        #     raise ValueError('Dimensions do not match!')
                 
         # add the current DimArray to the beginning of list:
         data.insert(0,self)

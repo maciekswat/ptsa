@@ -84,7 +84,7 @@ class Events(np.recarray):
         events.add_fields(name1=array1, name2=dtype('i4'))
         
         """
-
+        print 'adding field=',fields
         # list of current dtypes to which new dtypes will be added:
         # new_dtype = [(name,self[name].dtype) for name in self.dtype.names]
         
@@ -123,7 +123,7 @@ class Events(np.recarray):
                  filt_freq=None,filt_type='stop',filt_order=4,
                  keep_buffer=False,esrc='esrc',eoffset='eoffset',
                  loop_axis=None,num_mp_procs=0,
-                 eoffset_in_time=True):
+                 eoffset_in_time=True,**kwds):
         """
         Return the requested range of data for each event by using the
         proper data retrieval mechanism for each event.
@@ -165,17 +165,29 @@ class Events(np.recarray):
         -------
         A TimeSeries instance with dimensions (channels,events,time).
         """
-        
+        import time
+        start = time.time()
+
+        verbose = False
+        try:
+            verbose = kwds['verbose']
+        except LookupError:
+            pass
         # check for necessary fields
         if not (esrc in self.dtype.names and
                 eoffset in self.dtype.names):
             raise ValueError(esrc+' and '+eoffset+' must be valid fieldnames '+
                              'specifying source and offset for the data.')
         
-	# get ready to load dat
-	eventdata = []
+    # get ready to load dat
+	 #    eventdata = []
         events = []
-        
+
+        newdat_list = []
+
+        # newdat_0 = None
+        # newdat_1 = None
+
         # speed up by getting unique event sources first
         usources = np.unique(self[esrc])
 
@@ -184,7 +196,10 @@ class Events(np.recarray):
         for s,src in enumerate(usources):
             # get the eventOffsets from that source
             ind = np.atleast_1d(self[esrc]==src)
-            
+
+            if verbose:
+                if not s%10:
+                    print 'Reading event %d'%s
             if len(ind) == 1:
                 event_offsets=self[eoffset]
                 events.append(self)
@@ -208,19 +223,56 @@ class Events(np.recarray):
                                         num_mp_procs,
                                         eoffset,
                                         eoffset_in_time)
-            if eventdata is None:
-                eventdata = newdat
-            else:
-                eventdata = eventdata.extend(newdat,axis=1)
+
+            newdat_list.append(newdat)
+            # # print 'len(newdat_list)=',len(newdat_list)
+            # if len(newdat_list)==1:
+            #     newdat_0 = newdat
+            #
+            # if len(newdat_list)==3:
+            #     newdat_1 = newdat
+            #
+            #     events_conc = newdat_0.extend(newdat_list[1:],axis=1)
+            #     # events_conc = newdat_0.extend(newdat_1,axis=1)
+            #     # print
+            #
+            #ORIGINAL CODE
+            # if eventdata is None:
+            #     eventdata = newdat
+            # else:
+            #     eventdata = eventdata.extend(newdat,axis=1)
+
+
+        # eventdata = newdat_list[0]
+        # eventdata = eventdata.extend(newdat_list[1],axis=1)
+
+        # new code
+        eventdata_1 = newdat_list[0]
+        eventdata_1 = eventdata_1.extend(newdat_list[1:],axis=1)
+
+
         # concatenate (must eventually check that dims match)
-        tdim = eventdata['time']
-        cdim = eventdata['channels']
-        srate = eventdata.samplerate
+        # ORIGINAL CODE
+        # tdim = eventdata['time']
+        # cdim = eventdata['channels']
+        # srate = eventdata.samplerate
+        # events = np.concatenate(events).view(self.__class__)
+        # eventdata = TimeSeries(eventdata,
+        #                        'time', srate,
+        #                        dims=[cdim,Dim(events,'events'),tdim])
+
+        tdim = eventdata_1['time']
+        cdim = eventdata_1['channels']
+        srate = eventdata_1.samplerate
         events = np.concatenate(events).view(self.__class__)
-        eventdata = TimeSeries(eventdata,
+
+        eventdata = TimeSeries(eventdata_1,
                                'time', srate,
                                dims=[cdim,Dim(events,'events'),tdim])
-        
+
+
+        end = time.time()
+        print 'get_data tuntime=',(end - start), 's'
         return eventdata
 
     
