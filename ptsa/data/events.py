@@ -185,8 +185,6 @@ class Events(np.recarray):
 
         newdat_list = []
 
-        # newdat_0 = None
-        # newdat_1 = None
 
         # speed up by getting unique event sources first
         usources = np.unique(self[esrc])
@@ -225,17 +223,6 @@ class Events(np.recarray):
                                         eoffset_in_time)
 
             newdat_list.append(newdat)
-            # # print 'len(newdat_list)=',len(newdat_list)
-            # if len(newdat_list)==1:
-            #     newdat_0 = newdat
-            #
-            # if len(newdat_list)==3:
-            #     newdat_1 = newdat
-            #
-            #     events_conc = newdat_0.extend(newdat_list[1:],axis=1)
-            #     # events_conc = newdat_0.extend(newdat_1,axis=1)
-            #     # print
-            #
             #ORIGINAL CODE
             # if eventdata is None:
             #     eventdata = newdat
@@ -243,36 +230,28 @@ class Events(np.recarray):
             #     eventdata = eventdata.extend(newdat,axis=1)
 
 
-        # eventdata = newdat_list[0]
-        # eventdata = eventdata.extend(newdat_list[1],axis=1)
 
         # new code
-        eventdata_1 = newdat_list[0]
-        eventdata_1 = eventdata_1.extend(newdat_list[1:],axis=1)
+        eventdata = newdat_list[0]
+        eventdata = eventdata.extend(newdat_list[1:],axis=1)
+
 
 
         # concatenate (must eventually check that dims match)
         # ORIGINAL CODE
-        # tdim = eventdata['time']
-        # cdim = eventdata['channels']
-        # srate = eventdata.samplerate
-        # events = np.concatenate(events).view(self.__class__)
-        # eventdata = TimeSeries(eventdata,
-        #                        'time', srate,
-        #                        dims=[cdim,Dim(events,'events'),tdim])
-
-        tdim = eventdata_1['time']
-        cdim = eventdata_1['channels']
-        srate = eventdata_1.samplerate
+        tdim = eventdata['time']
+        cdim = eventdata['channels']
+        srate = eventdata.samplerate
         events = np.concatenate(events).view(self.__class__)
-
-        eventdata = TimeSeries(eventdata_1,
+        eventdata = TimeSeries(eventdata,
                                'time', srate,
                                dims=[cdim,Dim(events,'events'),tdim])
 
 
         end = time.time()
-        print 'get_data tuntime=',(end - start), 's'
+        if verbose:
+            print 'get_data tuntime=',(end - start), 's'
+
         return eventdata
 
     
