@@ -230,6 +230,7 @@ class BaseWrapper(object):
         
         # set event durations from rate
         # get the samplesize
+        # SHOULD NOT WE CALL IT SAMPLE_INTERVAL???
         samplesize = 1./self.samplerate
 
         # get the number of buffer samples

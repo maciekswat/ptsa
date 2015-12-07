@@ -187,7 +187,21 @@ class Events(np.recarray):
 
 
         # speed up by getting unique event sources first
-        usources = np.unique(self[esrc])
+        #ORIGINAL CODE - the order of usources is basically undefined because np.unique will sort according to
+        # self[esrs] hash. This  means that order of newdat arrays will depend on the memory assignment of RawBinaryWrapper
+        # if more than one binary wrappers are present in the events (i.e. in self)
+        # usources = np.unique(self[esrc])
+
+        # NEW CODE
+        usources_sorted = np.unique(self[esrc])
+
+        usources_unsorted = self[esrc]
+
+        usources, idx = np.unique(self[esrc], return_index=True)
+
+        # usources = usources[np.sort(idx)]
+
+        usources = usources_unsorted[np.sort(idx)]
 
         # loop over unique sources
         eventdata = None
@@ -232,9 +246,10 @@ class Events(np.recarray):
 
 
         # new code
+        start_extend_time = time.time()
         eventdata = newdat_list[0]
         eventdata = eventdata.extend(newdat_list[1:],axis=1)
-
+        end_extend_time = time.time()
 
 
         # concatenate (must eventually check that dims match)
@@ -251,6 +266,7 @@ class Events(np.recarray):
         end = time.time()
         if verbose:
             print 'get_data tuntime=',(end - start), 's'
+            print 'extend_time = =',(end_extend_time - start_extend_time), 's'
 
         return eventdata
 
