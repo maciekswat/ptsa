@@ -11,6 +11,10 @@
 import numpy as np
 
 from timeseries import TimeSeries,Dim
+
+import xray
+import pandas as pd
+
 # from basewrapper import BaseWrapper
 
 #import pdb
@@ -190,24 +194,34 @@ class Events(np.recarray):
         #ORIGINAL CODE - the order of usources is basically undefined because np.unique will sort according to
         # self[esrs] hash. This  means that order of newdat arrays will depend on the memory assignment of RawBinaryWrapper
         # if more than one binary wrappers are present in the events (i.e. in self)
-        # usources = np.unique(self[esrc])
+        usources = np.unique(self[esrc])
 
-        # NEW CODE
-        usources_sorted = np.unique(self[esrc])
-
-        usources_unsorted = self[esrc]
-
-        usources, idx = np.unique(self[esrc], return_index=True)
-
-        # usources = usources[np.sort(idx)]
-
-        usources = usources_unsorted[np.sort(idx)]
+        # # NEW CODE
+        # usources_sorted = np.unique(self[esrc])
+        #
+        # usources_unsorted = self[esrc]
+        #
+        # usources, idx = np.unique(self[esrc], return_index=True)
+        #
+        # # usources = usources[np.sort(idx)]
+        #
+        # usources = usources_unsorted[np.sort(idx)]
 
         # loop over unique sources
+
+        ordered_indices = np.arange(len(self))
+
+        event_indices_list = []
+
+
         eventdata = None
         for s,src in enumerate(usources):
             # get the eventOffsets from that source
             ind = np.atleast_1d(self[esrc]==src)
+
+            event_indices_list.append(ordered_indices[ind])
+
+
 
             if verbose:
                 if not s%10:
@@ -245,6 +259,11 @@ class Events(np.recarray):
 
 
 
+        event_indices_array = np.hstack(event_indices_list)
+
+        event_indices_restore_sort_order_array = event_indices_array.argsort()
+
+
         # new code
         start_extend_time = time.time()
         eventdata = newdat_list[0]
@@ -261,6 +280,11 @@ class Events(np.recarray):
         eventdata = TimeSeries(eventdata,
                                'time', srate,
                                dims=[cdim,Dim(events,'events'),tdim])
+
+
+        eventdata_xray = xray.DataArray(eventdata.base.base.base, coords=[cdim,events,tdim], dims=['channels','events','time'])
+
+        eventdata_xray  = eventdata_xray [:,event_indices_restore_sort_order_array ,:]
 
 
         end = time.time()

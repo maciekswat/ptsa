@@ -155,7 +155,9 @@ class BaseWrapper(object):
         """
         """
         raise NotImplementedError
-            
+
+    def get_sample_duration(self):
+        pass
     def get_event_data(self,channels,events,
                        start_time,end_time,buffer_time=0.0,
                        resampled_rate=None,
